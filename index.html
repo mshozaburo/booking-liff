@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบจองคิวบริการ</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -18,6 +18,7 @@
       color: #334155;
       text-align: center;
       padding: 20px;
+      box-sizing: border-box;
     }
     .spinner {
       width: 40px;
@@ -30,38 +31,52 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     #status { font-size: 16px; font-weight: 600; }
-    #err { color: #ef4444; font-size: 13px; margin-top: 10px; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="spinner"></div>
   <div id="status">กำลังเชื่อมต่อ LINE...</div>
-  <div id="err"></div>
 
   <script>
-    async function init() {
-      try {
-        await liff.init({ liffId: "2011214483-nGIOulHC" });
+    var LIFF_ID = "2011214483-nGIOulHC";
+    var FORM_URL = "https://forms.fillout.com/t/1GZR43kBWrus";
 
+    function redirectWithUid(uid) {
+      document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์ม...";
+      if (uid) {
+        window.location.replace(FORM_URL + "?line_uid=" + encodeURIComponent(uid));
+      } else {
+        window.location.replace(FORM_URL);
+      }
+    }
+
+    liff.init({ liffId: LIFF_ID })
+      .then(function() {
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
 
-        const profile = await liff.getProfile();
-        if (profile && profile.userId) {
-          document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์ม...";
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
-        } else {
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
+        // ดึง UID จาก Context ของแอป LINE โดยตรง (เร็วและไม่ติดขัด)
+        var context = liff.getContext();
+        if (context && context.userId) {
+          redirectWithUid(context.userId);
+          return;
         }
-      } catch (error) {
-        document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
-        document.getElementById("err").innerText = error.message || error;
-      }
-    }
 
-    window.addEventListener("load", init);
+        // สำรอง: ดึงจาก Profile หากเปิดจากภายนอก
+        liff.getProfile()
+          .then(function(profile) {
+            redirectWithUid(profile.userId);
+          })
+          .catch(function() {
+            redirectWithUid("");
+          });
+      })
+      .catch(function(err) {
+        // หากเกิดข้อผิดพลาดใดๆ ให้ส่งเข้าฟอร์มหลักทันที
+        redirectWithUid("");
+      });
   </script>
 </body>
 </html>
