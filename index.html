@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>กำลังพาไปหน้าจองคิว...</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>กำลังโหลดระบบจองคิว...</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f7f7f7; }
-    .loader { text-align: center; color: #555; }
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f8fafc; }
+    .loader { text-align: center; color: #334155; }
   </style>
 </head>
 <body>
   <div class="loader">
-    <h3>กำลังพาไปหน้าจองคิวบริการ...</h3>
+    <p>กำลังเชื่อมต่อข้อมูลสมาชิก LINE...</p>
   </div>
 
   <script>
-    async function main() {
+    async function initLiff() {
       try {
         await liff.init({ liffId: "2011214483-nGIOulHC" });
         if (!liff.isLoggedIn()) {
@@ -25,13 +25,15 @@
         }
         const profile = await liff.getProfile();
         const userId = profile.userId;
-        window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(userId));
+        
+        // เด้งไปยังหน้า Fillout พร้อมส่ง LINE ID
+        window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + userId);
       } catch (err) {
-        console.error(err);
+        console.error("LIFF Init Error: ", err);
         window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
       }
     }
-    main();
+    initLiff();
   </script>
 </body>
 </html>
