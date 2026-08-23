@@ -39,26 +39,29 @@
   <div id="err"></div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      liff.init({ liffId: "2011214483-nGlOuIHC" })
-        .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
-          }
-          return liff.getProfile();
-        })
-        .then((profile) => {
-          if (profile && profile.userId) {
-            document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์ม...";
-            window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
-          }
-        })
-        .catch((error) => {
-          document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
-          document.getElementById("err").innerText = error.message || JSON.stringify(error);
-        });
-    });
+    async function init() {
+      try {
+        await liff.init({ liffId: "2011214483-nGIOulHC" });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        if (profile && profile.userId) {
+          document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์ม...";
+          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
+        } else {
+          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
+        }
+      } catch (error) {
+        document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
+        document.getElementById("err").innerText = error.message || error;
+      }
+    }
+
+    window.addEventListener("load", init);
   </script>
 </body>
 </html>
