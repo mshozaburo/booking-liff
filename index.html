@@ -18,7 +18,6 @@
       color: #334155;
       text-align: center;
       padding: 20px;
-      box-sizing: border-box;
     }
     .spinner {
       width: 40px;
@@ -30,60 +29,50 @@
       margin-bottom: 16px;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    #status { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-    #log { font-size: 13px; color: #64748b; max-width: 90%; word-break: break-all; }
+    #status { font-size: 16px; font-weight: 600; }
+    #log { font-size: 13px; color: #64748b; margin-top: 8px; word-break: break-all; }
   </style>
 </head>
 <body>
-  <div class="spinner" id="loader"></div>
+  <div class="spinner"></div>
   <div id="status">กำลังเชื่อมต่อ LINE...</div>
-  <div id="log">เริ่มต้นระบบ...</div>
+  <div id="log">กรุณารอสักครู่...</div>
 
   <script>
-    function setLog(msg) {
-      document.getElementById("log").innerText = msg;
-    }
-
-    async function start() {
+    async function main() {
       try {
-        setLog("กำลังอ่านค่า LIFF ID...");
-        
-        // 1. Init LIFF
-        await liff.init({ liffId: "2011214483-nGlOuIHC" });
-        setLog("Init สำเร็จ กำลังตรวจสอบสถานะการ Login...");
+        const myLiffId = "2011214483-nGIOulHC";
 
-        // 2. ตรวจสอบการ Login
+        // ตรวจสอบก่อนว่าเปิดใน LINE In-App หรือไม่
+        if (liff.isInClient()) {
+          // ใน Client ไม่ต้องส่ง liffId หรือเรียก init ตรงๆ
+          await liff.init();
+        } else {
+          // นอก Client ให้ส่ง liffId
+          await liff.init({ liffId: myLiffId });
+        }
+
         if (!liff.isLoggedIn()) {
-          setLog("กำลังพาไปหน้าเข้าสู่ระบบ LINE...");
           liff.login();
           return;
         }
 
-        // 3. ดึง LINE User ID
-        setLog("กำลังดึง Profile...");
         const profile = await liff.getProfile();
-        const uid = profile.userId;
+        const userId = profile.userId;
 
-        if (uid) {
-          document.getElementById("status").innerText = "ดึง LINE ID สำเร็จ!";
-          setLog("UID: " + uid + " (กำลังเปิดฟอร์ม...)");
-          
-          setTimeout(() => {
-            window.location.href = "https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(uid);
-          }, 800);
+        if (userId) {
+          document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ!";
+          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(userId));
         } else {
-          document.getElementById("status").innerText = "ไม่พบ User ID";
-          setLog("กรุณากดเปิดผ่านแอป LINE ใหม่");
+          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
         }
       } catch (err) {
-        document.getElementById("loader").style.display = "none";
         document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
-        document.getElementById("status").style.color = "#ef4444";
-        setLog("Error: " + (err.message || JSON.stringify(err)));
+        document.getElementById("log").innerText = err.message || JSON.stringify(err);
       }
     }
 
-    window.onload = start;
+    window.onload = main;
   </script>
 </body>
 </html>
