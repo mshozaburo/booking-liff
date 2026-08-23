@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบจองคิวบริการ</title>
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -30,49 +30,35 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     #status { font-size: 16px; font-weight: 600; }
-    #log { font-size: 13px; color: #64748b; margin-top: 8px; word-break: break-all; }
+    #err { color: #ef4444; font-size: 13px; margin-top: 10px; word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="spinner"></div>
   <div id="status">กำลังเชื่อมต่อ LINE...</div>
-  <div id="log">กรุณารอสักครู่...</div>
+  <div id="err"></div>
 
   <script>
-    async function main() {
-      try {
-        const myLiffId = "2011214483-nGIOulHC";
-
-        // ตรวจสอบก่อนว่าเปิดใน LINE In-App หรือไม่
-        if (liff.isInClient()) {
-          // ใน Client ไม่ต้องส่ง liffId หรือเรียก init ตรงๆ
-          await liff.init();
-        } else {
-          // นอก Client ให้ส่ง liffId
-          await liff.init({ liffId: myLiffId });
-        }
-
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return;
-        }
-
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
-
-        if (userId) {
-          document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ!";
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(userId));
-        } else {
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
-        }
-      } catch (err) {
-        document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
-        document.getElementById("log").innerText = err.message || JSON.stringify(err);
-      }
-    }
-
-    window.onload = main;
+    document.addEventListener("DOMContentLoaded", function() {
+      liff.init({ liffId: "2011214483-nGIOulHC" })
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+          }
+          return liff.getProfile();
+        })
+        .then((profile) => {
+          if (profile && profile.userId) {
+            document.getElementById("status").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์ม...";
+            window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
+          }
+        })
+        .catch((error) => {
+          document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
+          document.getElementById("err").innerText = error.message || JSON.stringify(error);
+        });
+    });
   </script>
 </body>
 </html>
