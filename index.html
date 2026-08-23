@@ -18,6 +18,7 @@
       color: #334155;
       text-align: center;
       padding: 20px;
+      box-sizing: border-box;
     }
     .spinner {
       width: 40px;
@@ -29,45 +30,60 @@
       margin-bottom: 16px;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    #msg { font-size: 16px; font-weight: 500; }
+    #status { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    #log { font-size: 13px; color: #64748b; max-width: 90%; word-break: break-all; }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <div id="msg">กำลังเชื่อมต่อข้อมูลสมาชิก LINE...</div>
+  <div class="spinner" id="loader"></div>
+  <div id="status">กำลังเชื่อมต่อ LINE...</div>
+  <div id="log">เริ่มต้นระบบ...</div>
 
   <script>
-    async function main() {
+    function setLog(msg) {
+      document.getElementById("log").innerText = msg;
+    }
+
+    async function start() {
       try {
-        await liff.init({ liffId: "2011214483-nGIOulHC", withLoginOnExternalBrowser: true });
+        setLog("กำลังอ่านค่า LIFF ID...");
         
+        // 1. Init LIFF
+        await liff.init({ liffId: "2011214483-nGIOulHC" });
+        setLog("Init สำเร็จ กำลังตรวจสอบสถานะการ Login...");
+
+        // 2. ตรวจสอบการ Login
         if (!liff.isLoggedIn()) {
+          setLog("กำลังพาไปหน้าเข้าสู่ระบบ LINE...");
           liff.login();
           return;
         }
 
+        // 3. ดึง LINE User ID
+        setLog("กำลังดึง Profile...");
         const profile = await liff.getProfile();
-        const userId = profile.userId;
+        const uid = profile.userId;
 
-        if (userId) {
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(userId));
+        if (uid) {
+          document.getElementById("status").innerText = "ดึง LINE ID สำเร็จ!";
+          setLog("UID: " + uid + " (กำลังเปิดฟอร์ม...)");
+          
+          setTimeout(() => {
+            window.location.href = "https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(uid);
+          }, 800);
         } else {
-          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
+          document.getElementById("status").innerText = "ไม่พบ User ID";
+          setLog("กรุณากดเปิดผ่านแอป LINE ใหม่");
         }
       } catch (err) {
-        console.error("LIFF Init Error:", err);
-        // หากเกิดข้อผิดพลาดใน In-App ให้ลองดึง Profile ตรง
-        try {
-          if (liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
-            return;
-          }
-        } catch (e) {}
-        window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
+        document.getElementById("status").style.color = "#ef4444";
+        setLog("Error: " + (err.message || JSON.stringify(err)));
       }
     }
-    main();
+
+    window.onload = start;
   </script>
 </body>
 </html>
