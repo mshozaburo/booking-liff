@@ -37,14 +37,10 @@
   <div id="msg">กำลังเชื่อมต่อข้อมูลสมาชิก LINE...</div>
 
   <script>
-    window.onload = async function() {
+    async function main() {
       try {
-        // กำหนด liffId ตัวจริง
-        const myLiffId = "2011214483-nGIOulHC";
+        await liff.init({ liffId: "2011214483-nGIOulHC", withLoginOnExternalBrowser: true });
         
-        await liff.init({ liffId: myLiffId });
-        await liff.ready;
-
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
@@ -59,11 +55,19 @@
           window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
         }
       } catch (err) {
-        console.error("Init Error:", err);
-        // หากมีปัญหา ให้พาเข้าฟอร์มหลักโดยตรง
+        console.error("LIFF Init Error:", err);
+        // หากเกิดข้อผิดพลาดใน In-App ให้ลองดึง Profile ตรง
+        try {
+          if (liff.isLoggedIn()) {
+            const profile = await liff.getProfile();
+            window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(profile.userId));
+            return;
+          }
+        } catch (e) {}
         window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
       }
-    };
+    }
+    main();
   </script>
 </body>
 </html>
