@@ -3,37 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>กำลังโหลดระบบจองคิว...</title>
+  <title>ระบบจองคิวบริการ</title>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f8fafc; }
-    .loader { text-align: center; color: #334155; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f8fafc;
+      color: #334155;
+      text-align: center;
+      padding: 20px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #06c755;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #msg { font-size: 16px; font-weight: 500; }
+    #err { color: #ef4444; margin-top: 10px; font-size: 13px; word-break: break-all; }
   </style>
 </head>
 <body>
-  <div class="loader">
-    <p>กำลังเชื่อมต่อข้อมูลสมาชิก LINE...</p>
-  </div>
+  <div class="spinner"></div>
+  <div id="msg">กำลังเชื่อมต่อข้อมูลสมาชิก LINE...</div>
+  <div id="err"></div>
 
   <script>
-    async function initLiff() {
+    async function main() {
       try {
         await liff.init({ liffId: "2011214483-nGIOulHC" });
+        
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
-        const profile = await liff.getProfile();
-        const userId = profile.userId;
-        
-        // เด้งไปยังหน้า Fillout พร้อมส่ง LINE ID
-        window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + userId);
-      } catch (err) {
-        console.error("LIFF Init Error: ", err);
-        window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus");
+
+        // วิธีที่ 1: ดึงจาก Context / ID Token / Profile
+        let userId = "";
+        const context = liff.getContext();
+        if (context && context.userId) {
+          userId = context.userId;
+        } else {
+          const profile = await liff.getProfile();
+          userId = profile.userId;
+        }
+
+        if (userId) {
+          document.getElementById("msg").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดฟอร์มจอง...";
+          window.location.replace("https://forms.fillout.com/t/1GZR43kBWrus?line_uid=" + encodeURIComponent(userId));
+        } else {
+          document.getElementById("err").innerText = "ไม่สามารถอ่าน Line User ID ได้ กรุณาลองใหม่อีกครั้ง";
+        }
+      } catch (error) {
+        document.getElementById("err").innerText = "เกิดข้อผิดพลาด: " + (error.message || JSON.stringify(error));
       }
     }
-    initLiff();
+    main();
   </script>
 </body>
 </html>
